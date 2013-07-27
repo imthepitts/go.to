@@ -32,22 +32,22 @@ go(
     {
         app: {
             
-            home: function(go){
+            home: function(go, target){
                 console.log('home');
                 go.to('basicSearch');
             },
 
-            search: function(go){
+            search: function(go, target){
                 console.log('search');
                 go.to('advancedSearch');
             },
             
-            advancedSearch: function(go){
+            advancedSearch: function(go, target){
                 console.log('advancedSearch');
-                go.to('results');                
+                // go.to('results');                
             },
             
-            results: function(go){
+            results: function(go, target){
                 console.log('results');
             }
             
