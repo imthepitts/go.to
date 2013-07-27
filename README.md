@@ -28,7 +28,7 @@ go.to requires jQuery and Array.reduce() (use a shim to enable Array.reduce() on
 
 Constructor
 -----------
-Create a new instance of go.to by calling `go()`.
+Create an instance of go.to by calling `go()`. (Any subsequent instantiation of go.to will overwrite the previous. In the end, there can only be one!)
 
     go(routes[, controllers, options])
 
@@ -38,24 +38,42 @@ Create a new instance of go.to by calling `go()`.
 
 > `@options map` - Optional JSON map of options for this instance of go.to
 
-**Example Construction and Invocation:**
+**Example Instantiation and Invocation:**
 
 ```javascript
+// Create external object to be invoked as route handlers
+var obj = {
+    foo: function(go, target){
+        console.log('External \'foo\'');
+    }, 
+    bar: function(go, target){
+        console.log('External  \'bar\'');
+    }
+};
+
 go(
     
     // Route mappings
     {
-        "/hello.htm": function(){
-            alert('Hello World!');
+        // Function literal
+        "/hello.htm": function(go, target){
+            console.log('Hello World!');
         },
         
+        // Path to controller as string (must be a string if the controller is passed in as a literal JSON map)
+        // String route definitions will not perform as well as function literals or externa object/methohd references
         "/index.htm": "app.home",
 
+        // Route config map to specify handler, navigator, and subroutes
         "/search.htm": {        
-        
+            
+            // Handler to invoke        
             handler: "app.search",
+            
+            // Shortcut name for this route
             navigator: "basicSearch",
-                        
+
+            // Subroutes
             subroutes: {
                 "#advanced": {
                     handler: "app.advancedSearch",
@@ -67,7 +85,10 @@ go(
         "/results.htm": {
             handler: "app.results",
             navigator: "results"
-        }
+        },
+        
+        // External object/function
+        "/external.htm": obj.foo
         
     }, 
 
@@ -87,7 +108,7 @@ go(
             
             advancedSearch: function(go, target){
                 console.log('advancedSearch');
-                
+                obj.bar();
             },
             
             results: function(go, target){
