@@ -27,21 +27,39 @@
                 var pathname = href.substring(0, href.indexOf('#'));
                 if (hash.length && pathname === location.pathname){
                     $this.on('click', function(event){
-                        // This "self" refers to hoisted "self" just before constructor return statement  
-                        self.to(pathname, hash);
+                        // This "self" refers to hoisted "self" just before constructor return statement
+                        // Pass "this" (the clicked element) as the target to distinguish it from a normal page load
+                        self.to(pathname, hash, this);
                     });
                 }
             });            
         }
-                
-        // Route to the handler/controller
-        var to = function(route, subroute) {
+
+        /*
+         * Parses the current route and executes mapped handler/controller
+         * 
+         * .to(string route[, string subroute, object target])
+         *      @route string - Path of the current window location, relative to the root path specified in options.rootPath. Must start with forward slash, indicating a URL path (/index.htm).
+         *      @subroute string - Hash of the current window location, if exists. Do not include pound sign if passing subroute manually ("subroute", not "#subroute").
+         *      @target object - The target DOM object (window or anchor). Default is window.
+         * 
+         * .to(object location[, null, object target])
+         *      @location object - window.location object. Route and subroute are automatically parsed from location.pathname and location.hash.
+         *      @target object - The target DOM object (window or anchor). Default is window.
+         *      
+         * .to(string navigator[, null, object target])
+         *      @navigator string - Shortcut name for manually invoking a route/handler. Simple string corresponding to the navigator property of a route definition: "/index.htm": {navigator: "home"}. Cannot begin with "/" or "#".
+         *      @target object - The target DOM object (window or anchor). Default is window.
+         */
+        var to = function(route, subroute, target) {
             
             // If route was passed via window.location, split it into discreet route, subroute arguments without #
-            if (typeof route === 'object' && route.pathname){
-                subroute = (route.hash && route.hash.length ? route.hash.replace('#', '') : null);
+            if (typeof route === 'object'){
+                subroute = (route.hash.length ? route.hash.replace('#', '') : null);
                 route = route.pathname;
             }
+            
+            target = target || window;
                         
             var 
                 // Placeholder for evaluating each route
@@ -56,7 +74,7 @@
                 // Default handler to invoke
                 handler = function(go){
                     // If no route found, try to find navigator link                    
-                    navigate(route, go.routes);
+                    navigate(route, go);
                 },
                 
                 // Map dot notation path to same path in controllers object
@@ -79,94 +97,90 @@
                     }
                     return handler;
                 },
-                
-                // Find route for shortcut navigation ("navigator" property within route definition) 
-                navigate = function(to, routes, subroutes, selectedRoute){
-                    var theseRoutes = subroutes || routes;
+
+                // Find route for shortcut navigation ("navigator" property within route definition)
+                navigate = function(to, go){
+                    var map = {};
                     
-                    // Check top level routes (location path names)
-                    for (var route in theseRoutes){
-                        
-                        // Check subroutes (location hashes)
-                        if (theseRoutes[route].subroutes){
-                            navigate(to, routes, routes[route].subroutes, route);
-                        }
-                        
-                        // Route found!
-                        if (theseRoutes[route].navigator === to){
-                            var currentRoute = (selectedRoute ? selectedRoute + route : route);
-                        
-                            // Already at this location, just invoke the handler
-                            if (location.pathname + location.hash === options.rootPath + currentRoute){
-                                this.to(location);
-                        
-                            // Redirect to route location 
-                            } else {
-                                location.href = options.rootPath + currentRoute;
+                    // Create a map of the all the navigators to routes/subroutes
+                    if (!go.navigators){
+                        for (var route in routes){
+                            if (routes[route].navigator){
+                                map[routes[route].navigator] = {pathname: route, hash: null};
                             }
-                            break;
+                            if (routes[route].subroutes){
+                                for (var subroute in routes[route].subroutes){
+                                    if (routes[route].subroutes[subroute].navigator){
+                                        map[routes[route].subroutes[subroute].navigator] = {pathname: route, hash: subroute.substring(1, subroute.length)};
+                                    }
+                                }
+                            }
+                        }
+                        go.navigators = map;
+                    }
+
+                    // Found the route!
+                    if (go.navigators[to]){
+                        
+                        // Already at this location, just invoke the handler
+                        if (location.pathname === options.rootPath + go.navigators[to].pathname){
+                            go.to(go.navigators[to]);
+                            if (go.navigators[to].hash){
+                                location.hash = go.navigators[to].hash;
+                            }
+
+                        // Redirect to route location 
+                        } else {
+                            location.href = options.rootPath + go.navigators[to].pathname + (go.navigators[to].hash ? go.navigators[to].hash : '');
                         }
                     }
-                }, 
+                },
                 
                 // Assign handler based on endPoint data type, return success/failure
-                assignHandler = function(endPoint, type){
-                    if (type === 'function' && typeof endPoint === type){
-                        handler = endPoint;
-                        return true; 
-                    } else if (type === 'string' && typeof endPoint === type){
-                        handler = mapStringToHandler(endPoint);
-                        return true;
-                    }
-                    return false;
+                assignHandler = function(endPoint){
+                    return {
+                        'string': function(endPoint){
+                            handler = mapStringToHandler(endPoint);
+                            return true;
+                        }, 
+                        'function': function(endPoint){
+                            handler = endPoint;
+                            return true;
+                        },
+                        'object': function(){
+                            return false;
+                        }
+                    }[typeof endPoint](endPoint);
                 }
             ;
             
             // Check top-level route end point
             if (routes[routePath]){
-
-                endPoint = routes[routePath];
-                
-                if (assignHandler(endPoint, 'string')){
-                    // assigned                    
-                } else if (assignHandler(endPoint, 'function')){
+                endPoint = routes[routePath];                
+                if (assignHandler(endPoint)){
                     // assigned
                     
                 // Check for subroute end point before calling top-level handler                    
                 } else if (subroute && routes[routePath].subroutes['#' + subroute]){
-                                        
-                    endPoint = routes[routePath].subroutes['#' + subroute];
-                    
-                    if (assignHandler(endPoint, 'string')){
+                    // Get subrouite endpoint
+                    endPoint = routes[routePath].subroutes['#' + subroute];                    
+                    if (assignHandler(endPoint)){
                         // assigned
-                    } else if (assignHandler(endPoint, 'function')){
-                        // assigned
-                    } else if (endPoint.handler){
-                                    
+                    // Subroute end point has handler?
+                    } else if (endPoint.handler){          
                         endPoint = endPoint.handler;
-                        
-                        if (assignHandler(endPoint, 'string')){
-                            // assigned
-                        } else if (assignHandler(endPoint, 'function')){
-                            // assigned                            
-                        }
+                        assignHandler(endPoint);
                     }
                 
                 // No matching subroutes, so just call the top-level handler, if it exists
-                } else if (endPoint.handler){
-                    
+                } else if (endPoint.handler){                    
                     endPoint = endPoint.handler;
-                    
-                    if (assignHandler(endPoint, 'string')){
-                        // assigned
-                    } else if (assignHandler(endPoint, 'function')){
-                        // assigned
-                    }                    
+                    assignHandler(endPoint);
                 }
             }
             
             // Invoke the handler, passing in "go" instance, which provides the instance to all handlers/controllers
-            handler(this);
+            handler(this, target);
             
             // Enable event chaining and whatnot
             return this;
