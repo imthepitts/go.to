@@ -10,6 +10,9 @@
             rootPath:'', 
             bindHashClicks: true
         };
+        
+        var options = options || {}; 
+        
         for (var option in defaultOptions){
             if (typeof options[option] === 'undefined'){
                 options[option] = defaultOptions[option];
@@ -83,7 +86,7 @@
                     // Ensure Array.reduce() is available to go.to
                     return path.split('.').reduce(
                         function(obj, i) {
-                            return obj[i];
+                            return (typeof obj[i] === 'undefined' ? {} : obj[i]);
                         },
                         controllers
                     );
