@@ -1,18 +1,35 @@
+// Create external object to be invoked as route handlers
+var obj = {
+    foo: function(go, target){
+        console.log('External \'foo\'');
+    }, 
+    bar: function(go, target){
+        console.log('External  \'bar\'');
+    }
+};
+
 go(
     
     // Route mappings
     {
-        "/hello.htm": function(){
-            alert('Hello World!');
+        // Function literal
+        "/hello.htm": function(go, target){
+            console.log('Hello World!');
         },
         
+        // Path to controller as string (must be a string if the controller is passed in as a literal JSON map)
         "/index.htm": "app.home",
 
+        // Route config map to specify handler, navigator, and subroutes
         "/search.htm": {        
-        
+            
+            // Handler to invoke        
             handler: "app.search",
+            
+            // Shortcut name for this route
             navigator: "basicSearch",
-                        
+
+            // Subroutes
             subroutes: {
                 "#advanced": {
                     handler: "app.advancedSearch",
@@ -24,7 +41,10 @@ go(
         "/results.htm": {
             handler: "app.results",
             navigator: "results"
-        }
+        },
+        
+        // External object/function
+        "/external.htm": obj.foo
         
     }, 
 
@@ -44,7 +64,7 @@ go(
             
             advancedSearch: function(go, target){
                 console.log('advancedSearch');
-                // go.to('results');                
+                obj.bar();
             },
             
             results: function(go, target){
