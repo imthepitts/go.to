@@ -1,34 +1,63 @@
 go(
-
+    
+    // Route mappings
     {
-        "/index.htm": function(){
-            alert('hello world');
+        "/hello.htm": function(){
+            alert('Hello World!');
         },
+        
+        "/index.htm": "app.home",
 
         "/search.htm": {        
         
-            "#": "app.search",            
-            "#advanced": "app.advancedSearch"            
-        }
-
+            handler: "app.search",
+            navigator: "basicSearch",
+                        
+            subroutes: {
+                "#advanced": {
+                    handler: "app.advancedSearch",
+                    navigator: "advancedSearch"
+                }
+            }
+        },
         
-
+        "/results.htm": {
+            handler: "app.results",
+            navigator: "results"
+        }
+        
     }, 
 
+    // Controllers
     {
-
         app: {
+            
+            home: function(go){
+                console.log('home');
+                go.to('basicSearch');
+            },
 
-            search: function(model){                
-                // do search stuff
+            search: function(go){
+                console.log('search');
+                go.to('advancedSearch');
             },
             
-            advancedSearch: function(model){            
-                // do advanced search stuff            
+            advancedSearch: function(go){
+                console.log('advancedSearch');
+                go.to('results');                
+            },
+            
+            results: function(go){
+                console.log('results');
             }
-
+            
         }
-
+    },
+    
+    // Options
+    {
+        rootPath: '/test',
+        bindHashClicks: true
     }
 
-).to(location.pathname);
+).to(window.location);
