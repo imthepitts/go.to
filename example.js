@@ -18,6 +18,7 @@ go(
         },
         
         // Path to controller as string (must be a string if the controller is passed in as a literal JSON map)
+        // String route definitions will not perform as well as function literals or external object/methohd references
         "/index.htm": "app.home",
 
         // Route config map to specify handler, navigator, and subroutes
