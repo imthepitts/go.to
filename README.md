@@ -1,12 +1,10 @@
 go.to
 =====
-
 Simple URL routing for lazy JavaScript developers.
 
 Overview
 --------
 go.to routes the window location (pathname and hash) to a function that runs whatever code is required for that location. Routes can be also be invoked directly if a navigator (shortcut) is defined for that route `go.to('foo')`.
-
 
 Why You Might Need go.to
 ------------------------
@@ -20,15 +18,31 @@ You have a moderate amount of JavaScript code, and it's getting confusing which 
 * You don't want to get roped into some other gargantuan, confusing JS framework that starts bossing you around about how you build your application
 * You appreciate the nostalgia of [goto](http://en.wikipedia.org/wiki/Goto) statements from days gone by.
 
-
 Dependences
 -----------
 go.to requires jQuery and Array.reduce() (use a shim to enable Array.reduce() on older browers). jQuery is only required if using automatic binding of hash anchor click events (turned on by default).
 
+Features & Behavior
+-------------------
+go.to is based entirely on the assumption that it will be used to run bits of JavaScript code on a page by page basis. So if the user browses to `/index.htm`, go.to will only run the section of code that is mapped to that path (using `window.location.pathname`).
+
+If a hash location is specified in the URL (`window.location.hash`) as `/search.htm#advanced`, go.to will first run any code mapped to the route `/search.htm` and then it will run any code mapped to the subroute `#advanced`. 
+
+**IMPORTANT:** go.to will only run the parent route code once per page load (e.g. `/search.htm`), even if the route is explicitly called later. This helps to ensure event bindings within the route don't get bound multiple times.
+
+Routes can have shortcuts, called "navigators" defined in the routes JSON map. This allows a particular route to be explicitly called by that shortcut name: `go.to('advancedSearch')` instead of `go.to('/search.htm', '#advanced)`.
+
+**Feature Summary:**
+
+* Automatically routes `window.location` (pathname and hash) to a predefined function on page load.
+* `route` corresponds to the URL path, and `subroute` corresponds to the hash, if it exists.
+* Parent routes are only run once per page load, even if explicitly called later. 
+* Parent routes will automatically be run for a subroute, if the parent hasn't already been run.
+* Navigators are shortcuts that can be assigned to routes and called explicitly via `go.to('navigatorName')`.
 
 Constructor
 -----------
-Create an instance of go.to by calling `go()`. (Any subsequent instantiation of go.to will overwrite the previous. In the end, there can only be one!)
+Create an instance of go.to by calling `go()`. You can have multiple instances of go.to, but probably not a common use case.
 
     go(routes[, controllers, options])
 
@@ -129,7 +143,6 @@ go(
 
 Methods
 -------
-
 `.to()` - *Parses the current route and executes mapped handler/controller*
 
 **Method Signatures**:
@@ -151,6 +164,20 @@ Methods
 > `@navigator string` - Shortcut name for manually invoking a route/handler. Simple string corresponding to the navigator property of a route definition: "/index.htm": {navigator: "home"}. Cannot begin with "/" or "#".
 
 > `@target object` - The target DOM object (window or anchor). Default is window.
+
+Options
+-------
+There are a few options that can be passed into the constructor.
+
+```
+{
+    rootPath: '/some/path',
+    bindHashClicks: true
+}
+```
+> `rootPath`: default = `''` - Path from root of site where the application lives. The value of `rootPath` will be prefixed onto the route paths specified in the routes JSON map. If the application lives in the root, rootPath should be omitted or set to empty string (`rootPath: ''`).
+
+> `bindHashClicks`: default = `true` - Specified if anchors with hrefs containing "#" should be automatically bound to any corresponding subroutes on click. If clicked, go.to runs the subroute handler.
 
 Properties
 ----------
