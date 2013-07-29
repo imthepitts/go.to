@@ -61,7 +61,7 @@
                 subroute = (route.hash && route.hash.length ? route.hash.replace('#', '') : null);
                 route = route.pathname;
             }
-            
+                        
             target = target || window;
                         
             var 
@@ -164,10 +164,10 @@
             if (routes[routePath]){
                 endPoint = routes[routePath];                
                 if (assignHandler(endPoint)){
-                    routes[routePath] = {handler: handler};
+                    routes[routePath].handler = handler;
                     
                 // Check for subroute end point before calling top-level handler                    
-                } else if (subroute && routes[routePath].subroutes['#' + subroute]){
+                } else if (subroute && routes[routePath].subroutes && routes[routePath].subroutes['#' + subroute]){
                     
                     // Get subroute endpoint
                     endPoint = routes[routePath].subroutes['#' + subroute];                    
@@ -175,7 +175,7 @@
                         runParentRouteFirst = true;
 
                     // Subroute end point has handler?
-                    } else if (endPoint.handler){          
+                    } else if (endPoint.handler){
                         endPoint = endPoint.handler;
                         if (assignHandler(endPoint)){
                             runParentRouteFirst = true;
@@ -185,13 +185,15 @@
                 // No matching subroutes, so just call the top-level handler, if it exists
                 } else if (endPoint.handler){
                     endPoint = endPoint.handler;
-                    assignHandler(endPoint);
+                    if (assignHandler(endPoint)){
+                        routes[routePath].handler = handler;
+                    }
                 }
             }
             
             // Ensure parent route handler runs before subroute 
             if (runParentRouteFirst){
-                to(routePath);
+                to.call(this, route);
             }
             
             // Invoke the handler, passing in "go" instance, which provides the instance to all handlers/controllers
