@@ -7,7 +7,7 @@
         
         // Set default options
         var defaultOptions = {
-            rootPath:'', 
+            rootPath: '', 
             bindHashClicks: true
         };
         
