@@ -58,7 +58,7 @@
             
             // If route was passed via window.location, split it into discreet route, subroute arguments without #
             if (typeof route === 'object'){
-                subroute = (route.hash.length ? route.hash.replace('#', '') : null);
+                subroute = (route.hash && route.hash.length ? route.hash.replace('#', '') : null);
                 route = route.pathname;
             }
             
@@ -67,6 +67,9 @@
             var 
                 // Placeholder for evaluating each route
                 endPoint = '',
+                
+                // Switch for determining if route needs to be run before executing subroute
+                runParentRouteFirst = false,
                 
                 // Ensure routePath is relative to the application root (options.rootPath)
                 routePath = route.substring(
@@ -161,29 +164,43 @@
             if (routes[routePath]){
                 endPoint = routes[routePath];                
                 if (assignHandler(endPoint)){
-                    // assigned
+                    routes[routePath] = {handler: handler};
                     
                 // Check for subroute end point before calling top-level handler                    
                 } else if (subroute && routes[routePath].subroutes['#' + subroute]){
-                    // Get subrouite endpoint
+                    
+                    // Get subroute endpoint
                     endPoint = routes[routePath].subroutes['#' + subroute];                    
                     if (assignHandler(endPoint)){
-                        // assigned
+                        runParentRouteFirst = true;
+
                     // Subroute end point has handler?
                     } else if (endPoint.handler){          
                         endPoint = endPoint.handler;
-                        assignHandler(endPoint);
+                        if (assignHandler(endPoint)){
+                            runParentRouteFirst = true;
+                        }
                     }
                 
                 // No matching subroutes, so just call the top-level handler, if it exists
-                } else if (endPoint.handler){                    
+                } else if (endPoint.handler){
                     endPoint = endPoint.handler;
                     assignHandler(endPoint);
                 }
             }
             
+            // Ensure parent route handler runs before subroute 
+            if (runParentRouteFirst){
+                to(routePath);
+            }
+            
             // Invoke the handler, passing in "go" instance, which provides the instance to all handlers/controllers
             handler(this, target);
+            
+            // Prevent top-level route from running again
+            if (routes[routePath]){ 
+                routes[routePath].handler = function(){};
+            }
             
             // Enable event chaining and whatnot
             return this;
