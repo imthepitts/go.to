@@ -53,8 +53,9 @@
          *      @location object - window.location object. Route and subroute are automatically parsed from location.pathname and location.hash.
          *      @target object - The target DOM object (window or anchor). Default is window.
          *      
-         * .to(string navigator[, null, object target])
+         * .to(string navigator[, redirect, object target])
          *      @navigator string - Shortcut name for manually invoking a route/handler. Simple string corresponding to the navigator property of a route definition: "/index.htm": {navigator: "home"}. Cannot begin with "/" or "#".
+         *      @redirect boolean - Specify if navigator should be invoked via redirect. Default is false (no redirect).
          *      @target object - The target DOM object (window or anchor). Default is window.
          */
         var to = function(route, subroute, target) {
