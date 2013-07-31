@@ -5,14 +5,17 @@
     // Set go.to instance to global variable "go"
     window.go = function(routes, controllers, options) {
         
-        // Set default options
-        var defaultOptions = {
-            rootPath: '', 
-            bindHashClicks: true
-        };
-        
-        var options = options || {}; 
-        
+        // Set defaults for controllers and options
+        var 
+            controllers = controllers || {},
+            options = options || {},
+
+            defaultOptions = {
+                rootPath: '', 
+                bindHashClicks: true
+            }
+        ;
+
         for (var option in defaultOptions){
             if (typeof options[option] === 'undefined'){
                 options[option] = defaultOptions[option];
@@ -28,14 +31,14 @@
                 var href = $this.attr('href');
                 var hash = href.substring(href.indexOf('#')+1);
                 var pathname = href.substring(0, href.indexOf('#'));
-                if (hash.length && pathname === location.pathname){
+                if (hash.length && pathname === window.location.pathname){
                     $this.on('click', function(event){
                         // This "self" refers to hoisted "self" just before constructor return statement
                         // Pass "this" (the clicked element) as the target to distinguish it from a normal page load
                         self.to(pathname, hash, this);
                     });
                 }
-            });            
+            });
         }
 
         /*
@@ -80,7 +83,7 @@
                 // Default handler to invoke
                 handler = function(go){
                     // If no route found, try to find navigator link                    
-                    navigate(route, go);
+                    navigate.call(go, route, subroute === true);
                 },
                 
                 // Map dot notation path to same path in controllers object
@@ -105,11 +108,11 @@
                 },
 
                 // Find route for shortcut navigation ("navigator" property within route definition)
-                navigate = function(to, go){
+                navigate = function(to, redirect){
                     var map = {};
                     
                     // Create a map of the all the navigators to routes/subroutes
-                    if (!go.navigators){
+                    if (!this.navigators){
                         for (var route in routes){
                             if (routes[route].navigator){
                                 map[routes[route].navigator] = {pathname: route, hash: null};
@@ -122,22 +125,26 @@
                                 }
                             }
                         }
-                        go.navigators = map;
+                        this.navigators = map;
                     }
 
                     // Found the route!
-                    if (go.navigators[to]){
-                        
+                    if (this.navigators[to]){
+
                         // Already at this location, just invoke the handler
-                        if (location.pathname === options.rootPath + go.navigators[to].pathname){
-                            go.to(go.navigators[to]);
-                            if (go.navigators[to].hash){
-                                location.hash = go.navigators[to].hash;
+                        if (window.location.pathname === options.rootPath + this.navigators[to].pathname){
+                            this.to(this.navigators[to]);
+                            if (this.navigators[to].hash){
+                                window.location.hash = this.navigators[to].hash;
                             }
 
-                        // Redirect to route location 
+                        // Redirect to route location, if specified, else just invoke the handler
                         } else {
-                            location.href = options.rootPath + go.navigators[to].pathname + (go.navigators[to].hash ? go.navigators[to].hash : '');
+                            if (redirect){
+                                window.location.href = options.rootPath + this.navigators[to].pathname + (this.navigators[to].hash ? this.navigators[to].hash : '');
+                            } else {
+                                this.to(this.navigators[to]);
+                            }
                         }
                     }
                 },
@@ -162,15 +169,15 @@
             
             // Check top-level route end point
             if (routes[routePath]){
-                endPoint = routes[routePath];                
+                endPoint = routes[routePath];
                 if (assignHandler(endPoint)){
                     routes[routePath].handler = handler;
                     
-                // Check for subroute end point before calling top-level handler                    
+                // Check for subroute end point before calling top-level handler
                 } else if (subroute && routes[routePath].subroutes && routes[routePath].subroutes['#' + subroute]){
                     
                     // Get subroute endpoint
-                    endPoint = routes[routePath].subroutes['#' + subroute];                    
+                    endPoint = routes[routePath].subroutes['#' + subroute];
                     if (assignHandler(endPoint)){
                         runParentRouteFirst = true;
 
@@ -197,13 +204,13 @@
             }
             
             // Invoke the handler, passing in "go" instance, which provides the instance to all handlers/controllers
-            handler(this, target);
+            handler.call(controllers, this, target);
             
             // Prevent top-level route from running again
             if (routes[routePath]){ 
                 routes[routePath].handler = function(){};
             }
-            
+
             // Enable event chaining and whatnot
             return this;
             
@@ -212,7 +219,7 @@
         // Hash anchor click binding relies on hoisting this "self" variable for proper reference to go.to instance
         var self = {
                     
-            to: to,            
+            to: to,
             routes: routes,
             controllers: controllers,
             options: options
