@@ -55,7 +55,8 @@ go(
             
             home: function(go, target){
                 console.log('home');
-                go.to('basicSearch');
+                // Invoke basic search handler via redirect
+                go.to('basicSearch', true);
             },
 
             search: function(go, target){
