@@ -185,12 +185,18 @@ There are a few options that can be passed into the constructor.
 ```
 {
     rootPath: '/some/path',
-    bindHashClicks: true
+    bindHashClicks: true,
+    ignoreCase: true,
+    ignoreSlash: true
 }
 ```
 > `rootPath`: default = `''` - Path from root of site where the application lives. The value of `rootPath` will be prefixed onto the route paths specified in the routes JSON map. If the application lives in the root, rootPath should be omitted or set to empty string (`rootPath: ''`).
 
 > `bindHashClicks`: default = `true` - Specified if anchors with hrefs containing "#" should be automatically bound to any corresponding subroutes on click. If clicked, go.to runs the subroute handler.
+
+> `ignoreCase`: default = `true` - Ignores case of routes and subroutes.
+
+> `ignoreSlash`: default = `true` - Ignores trailing slash in route.
 
 Properties
 ----------
