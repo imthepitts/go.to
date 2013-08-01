@@ -45,17 +45,6 @@
                 }
             }
         }
-
-        // Remove trailing slashes from routes if ignoring trailing slashes
-        if (options.ignoreSlash){
-            for (var item in routes){
-                replacer = item.replace(/\/$/, '');
-                if (item !== replacer){
-                    routes[replacer] = routes[item];
-                    delete routes[item];
-                }
-            }
-        }
         
         // Bind hash anchor click events to go.to routes (options.bindHashClicks)
         if (options.bindHashClicks){
