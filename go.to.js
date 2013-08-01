@@ -108,10 +108,7 @@
             var 
                 // Placeholder for evaluating each route
                 endPoint = '',
-                
-                // Switch for determining if route needs to be run before executing subroute
-                runParentRouteFirst = false,               
-                
+                                
                 // Ensure routePath is relative to the application root (options.rootPath)
                 routePath = route.substring(
                     (options.rootPath === route.substring(0, options.rootPath.length) ? options.rootPath.length : 0), 
@@ -123,7 +120,6 @@
 
                     // Functions to execute in before route hook
                     before: function(){
-                        console.log('before hook')
                     }, 
 
                     // Handler to invoke
@@ -134,9 +130,11 @@
 
                     // Functions to execute in after route hook
                     after: function(){
-                        console.log('after hook')
                     }
                 },
+
+                // Queue for processing handlers in correct order
+                handlerQueue = [],
                 
                 // Map dot notation path to same path in controllers object
                 mapStringToEndPoint = function(path){
@@ -217,60 +215,97 @@
                             return false;
                         }
                     }[typeof endPoint](endPoint);
+                },
+
+                fetchHandler = function(routePath, subroute, handlerType){
+
+                    // Switch for determining if route needs to be run before executing subroute
+                    var runParentRouteFirst = false;
+
+                    // Check for hook handler
+                    var assignHookHandler = function(handlerType){
+                        if (routes[handlerType]){
+                            assignHandler(routes[handlerType], handlerType);
+                        }
+                    };
+
+                    // Hook handler found, assign it and return it
+                    if ({before:true, after:true}[handlerType]){
+                        assignHookHandler(handlerType);
+                        return handlers[handlerType];
+                    }
+
+                    // Check top-level route end point
+                    if (routes[routePath]){
+                        endPoint = routes[routePath];
+                        if (assignHandler(endPoint, handlerType)){
+                            routes[routePath].handler = handlers.handler;
+                            
+                        // Check for subroute end point before calling top-level handler
+                        } else if (subroute && routes[routePath].subroutes && routes[routePath].subroutes['#' + subroute]){
+                            
+                            // Get subroute endpoint
+                            endPoint = routes[routePath].subroutes['#' + subroute];
+                            if (assignHandler(endPoint, handlerType)){
+                                runParentRouteFirst = true;
+
+                            // Subroute end point has handler?
+                            } else if (endPoint.handler){
+                                endPoint = endPoint.handler;
+                                if (assignHandler(endPoint, handlerType)){
+                                    runParentRouteFirst = true;
+                                }
+                            }
+
+                            if (runParentRouteFirst){
+                                fetchHandler(routePath, null, 'parent');
+                            }
+
+                        
+                        // No matching subroutes, so just call the top-level handler, if it exists
+                        } else if (endPoint.handler){
+                            endPoint = endPoint.handler;
+                            if (assignHandler(endPoint, handlerType)){
+                                routes[routePath].handler = handlers.handler;
+                            }
+                        }
+                    }
+
+                    return handlers[handlerType];
                 }
             ;
 
-            // Check top-level route end point
-            if (routes[routePath]){
-                endPoint = routes[routePath];
-                if (assignHandler(endPoint)){
-                    routes[routePath].handler = handlers.handler;
-                    
-                // Check for subroute end point before calling top-level handler
-                } else if (subroute && routes[routePath].subroutes && routes[routePath].subroutes['#' + subroute]){
-                    
-                    // Get subroute endpoint
-                    endPoint = routes[routePath].subroutes['#' + subroute];
-                    if (assignHandler(endPoint)){
-                        runParentRouteFirst = true;
-
-                    // Subroute end point has handler?
-                    } else if (endPoint.handler){
-                        endPoint = endPoint.handler;
-                        if (assignHandler(endPoint)){
-                            runParentRouteFirst = true;
-                        }
-                    }
-                
-                // No matching subroutes, so just call the top-level handler, if it exists
-                } else if (endPoint.handler){
-                    endPoint = endPoint.handler;
-                    if (assignHandler(endPoint)){
-                        routes[routePath].handler = handlers.handler;
-                    }
-                }
-            }
-
-            // Run pre-route handler, if it exists
+            // Queue pre-route handler, if it exists
             if (routes.before && route !== 'before'){
-                assignHandler(routes.before, 'before');
-                handlers.before.call(controllers, this, target);
+                handlerQueue.push(fetchHandler(null, null, 'before'));
                 delete routes.before;
             }
 
-            // Ensure parent route handler runs before subroute 
-            if (runParentRouteFirst){
-                to.call(this, route);
-            }
-            
-            // Invoke the handler, passing in "go" instance, which provides the instance to all handlers/controllers
-            handlers.handler.call(controllers, this, target);
+            // Fetch the primary handler (parent route will be set, if it exists)
+            handlers.handler = fetchHandler(routePath, subroute, 'handler');
 
-            // Run after-route handler, if it exists
+            // Queue parent route handler, if subroute requires it
+            if (handlers.parent){
+                handlerQueue.push(fetchHandler(route, null, 'parent'));
+            }
+
+            // Queue primary handler, now that parent has been queued
+            handlerQueue.push(handlers.handler);
+
+            // Queue after-route handler, if it exists
             if (routes.after && route !== 'after'){
-                assignHandler(routes.after, 'after');
-                handlers.after.call(controllers, this, target);
+                handlerQueue.push(fetchHandler(null, null, 'after'));
                 delete routes.after;
+            }
+
+            // Execute all handlers in the queue
+            for (var i = 0; i < handlerQueue.length; i++){
+                if (typeof handlerQueue[i] === 'function'){
+
+                    // Invoke the handler, passing in "go" instance, which provides the instance to all handlers/controllers
+                    // Set "this" scope to the controllers JSON map
+                    handlerQueue[i].call(controllers, this, target);
+                }
             }
 
             // Prevent top-level route from running again
