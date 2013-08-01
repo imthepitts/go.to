@@ -12,7 +12,7 @@ go(
     
     // Route mappings
     {
-        // Run this function before every route is excuted
+        // Run this function before every route is executed
         before: function(){
             console.log('before');
         },
@@ -52,7 +52,7 @@ go(
         // External object/function
         "/external.htm": obj.foo, 
 
-        // Run this function after every route is excuted
+        // Run this function after every route is executed
         after: function(){
             console.log('after');
         }
