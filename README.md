@@ -160,9 +160,9 @@ Methods
 
     .to(string route[, string subroute, object target])
 
-> `@route string` - Path of the current window location, relative to the root path specified in options.rootPath. Must start with forward slash, indicating a URL path (/index.htm).
+> `@route string` - Path of the current window location, relative to the root path specified in options.rootPath. Must start with forward slash, indicating a URL path (/index.htm). Route case and any trailing slashes are ignored by default.
 
-> `@subroute string` - Hash of the current window location, if exists. Do not include pound sign if passing subroute manually ("subroute", not "#subroute").
+> `@subroute string` - Hash of the current window location, if exists. Do not include pound sign if passing subroute manually ("subroute", not "#subroute"). Subroute case is ignored by default.
 
 > `@target object` - The target DOM object (window or anchor). Default is window.
         
@@ -172,7 +172,7 @@ Methods
 > `@target object` - The target DOM object (window or anchor). Default is window.
         
     .to(string navigator[, redirect, object target])
-> `@navigator string` - Shortcut name for manually invoking a route/handler. Simple string corresponding to the navigator property of a route definition: "/index.htm": {navigator: "home"}. Cannot begin with "/" or "#".
+> `@navigator string` - Shortcut name for manually invoking a route/handler. Simple string corresponding to the navigator property of a route definition: "/index.htm": {navigator: "home"}. Cannot begin with "/" or "#". Navigator is always case sensitive.
 
 > `@redirect boolean` - Specify if navigator should be invoked via redirect. Default is false (no redirect).
 
@@ -194,7 +194,7 @@ There are a few options that can be passed into the constructor.
 
 > `bindHashClicks`: default = `true` - Specified if anchors with hrefs containing "#" should be automatically bound to any corresponding subroutes on click. If clicked, go.to runs the subroute handler.
 
-> `ignoreCase`: default = `true` - Ignores case of routes and subroutes.
+> `ignoreCase`: default = `true` - Ignores case of routes and subroutes. Only applies to routes. Navigators are always case-sensitive.
 
 > `ignoreSlash`: default = `true` - Ignores trailing slash in route.
 
