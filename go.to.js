@@ -73,18 +73,32 @@
                 endPoint = '',
                 
                 // Switch for determining if route needs to be run before executing subroute
-                runParentRouteFirst = false,
+                runParentRouteFirst = false,               
                 
                 // Ensure routePath is relative to the application root (options.rootPath)
                 routePath = route.substring(
                     (options.rootPath === route.substring(0, options.rootPath.length) ? options.rootPath.length : 0), 
                     route.length
                 ),
-                
-                // Default handler to invoke
-                handler = function(go){
-                    // If no route found, try to find navigator link                    
-                    navigate.call(go, route, subroute === true);
+
+                // Route handlers
+                handlers = {
+
+                    // Functions to execute in before route hook
+                    before: function(){
+                        console.log('before hook')
+                    }, 
+
+                    // Handler to invoke
+                    handler: function(go){
+                        // If no route found, try to find navigator link                    
+                        navigate.call(go, route, subroute === true);
+                    },
+
+                    // Functions to execute in after route hook
+                    after: function(){
+                        console.log('after hook')
+                    }
                 },
                 
                 // Map dot notation path to same path in controllers object
@@ -105,7 +119,7 @@
                     if (typeof endPoint === 'function'){
                         return endPoint;
                     }
-                    return handler;
+                    return handlers.handler;
                 },
 
                 // Find route for shortcut navigation ("navigator" property within route definition)
@@ -151,14 +165,15 @@
                 },
                 
                 // Assign handler based on endPoint data type, return success/failure
-                assignHandler = function(endPoint){
+                assignHandler = function(endPoint, handlerType){
+                    handlerType = handlerType || 'handler';
                     return {
                         'string': function(endPoint){
-                            handler = mapStringToHandler(endPoint);
+                            handlers[handlerType] = mapStringToHandler(endPoint);
                             return true;
                         }, 
                         'function': function(endPoint){
-                            handler = endPoint;
+                            handlers[handlerType] = endPoint;
                             return true;
                         },
                         'object': function(){
@@ -167,12 +182,12 @@
                     }[typeof endPoint](endPoint);
                 }
             ;
-            
+
             // Check top-level route end point
             if (routes[routePath]){
                 endPoint = routes[routePath];
                 if (assignHandler(endPoint)){
-                    routes[routePath].handler = handler;
+                    routes[routePath].handler = handlers.handler;
                     
                 // Check for subroute end point before calling top-level handler
                 } else if (subroute && routes[routePath].subroutes && routes[routePath].subroutes['#' + subroute]){
@@ -194,19 +209,33 @@
                 } else if (endPoint.handler){
                     endPoint = endPoint.handler;
                     if (assignHandler(endPoint)){
-                        routes[routePath].handler = handler;
+                        routes[routePath].handler = handlers.handler;
                     }
                 }
             }
-            
+
+            // Run pre-route handler, if it exists
+            if (routes.before && route !== 'before'){
+                assignHandler(routes.before, 'before');
+                handlers.before.call(controllers, this, target);
+                delete routes.before;
+            }
+
             // Ensure parent route handler runs before subroute 
             if (runParentRouteFirst){
                 to.call(this, route);
             }
             
             // Invoke the handler, passing in "go" instance, which provides the instance to all handlers/controllers
-            handler.call(controllers, this, target);
-            
+            handlers.handler.call(controllers, this, target);
+
+            // Run after-route handler, if it exists
+            if (routes.after && route !== 'after'){
+                assignHandler(routes.after, 'after');
+                handlers.after.call(controllers, this, target);
+                delete routes.after;
+            }
+
             // Prevent top-level route from running again
             if (routes[routePath]){ 
                 routes[routePath].handler = function(){};
