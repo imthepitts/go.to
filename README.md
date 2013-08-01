@@ -69,6 +69,11 @@ go(
     
     // Route mappings
     {
+        // Run this function before every route is executed
+        before: function(){
+            console.log('before');
+        },
+        
         // Function literal
         "/hello.htm": function(go, target){
             console.log('Hello World!');
@@ -102,7 +107,12 @@ go(
         },
         
         // External object/function
-        "/external.htm": obj.foo
+        "/external.htm": obj.foo, 
+
+        // Run this function after every route is executed
+        after: function(){
+            console.log('after');
+        }
         
     }, 
 
@@ -112,7 +122,8 @@ go(
             
             home: function(go, target){
                 console.log('home');
-                go.to('basicSearch');
+                // Invoke basic search handler via redirect
+                go.to('basicSearch', true);
             },
 
             search: function(go, target){
