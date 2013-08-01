@@ -104,7 +104,7 @@
             }
             
             // Convert route to lowercase for case-insensitve routing
-            if (options.ignoreCase){
+            if (options.ignoreCase && route.charAt(0) === '/'){
                 route = route.toLowerCase();
                 if (typeof subroute === 'string'){
                     subroute = subroute.toLowerCase();
