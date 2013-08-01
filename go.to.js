@@ -12,13 +12,48 @@
 
             defaultOptions = {
                 rootPath: '', 
-                bindHashClicks: true
-            }
+                bindHashClicks: true,
+                ignoreCase: true,
+                ignoreSlash: true
+            }, 
+
+            replacer = '';
         ;
 
         for (var option in defaultOptions){
             if (typeof options[option] === 'undefined'){
                 options[option] = defaultOptions[option];
+            }
+        }
+
+        // Convert route to lowercase for case-insensitve routing
+        if (options.ignoreCase){
+            for (var item in routes){
+                if (routes[item].subroutes){
+                    for (var sub in routes[item].subroutes){
+                        replacer = sub.toLowerCase();
+                        if (sub !== replacer){
+                            routes[item].subroutes[replacer] = routes[item].subroutes[sub];
+                            delete routes[item].subroutes[sub];
+                        }                        
+                    }
+                }
+                replacer = item.toLowerCase();
+                if (item !== replacer){
+                    routes[replacer] = routes[item];
+                    delete routes[item];
+                }
+            }
+        }
+
+        // Remove trailing slashes from routes if ignoring trailing slashes
+        if (options.ignoreSlash){
+            for (var item in routes){
+                replacer = item.replace(/\/$/, '');
+                if (item !== replacer){
+                    routes[replacer] = routes[item];
+                    delete routes[item];
+                }
             }
         }
         
@@ -60,14 +95,27 @@
          */
         var to = function(route, subroute, target) {
             
+            target = target || window;
+
             // If route was passed via window.location, split it into discreet route, subroute arguments without #
             if (typeof route === 'object'){
                 subroute = (route.hash && route.hash.length ? route.hash.replace('#', '') : null);
                 route = route.pathname;
             }
-                        
-            target = target || window;
-                        
+            
+            // Convert route to lowercase for case-insensitve routing
+            if (options.ignoreCase){
+                route = route.toLowerCase();
+                if (typeof subroute === 'string'){
+                    subroute = subroute.toLowerCase();
+                }
+            }
+
+            // Remove trailing slash if ignoring slash
+            if (options.ignoreSlash){
+                route = route.replace(/\/$/, '');
+            }
+            
             var 
                 // Placeholder for evaluating each route
                 endPoint = '',
