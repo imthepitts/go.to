@@ -209,6 +209,65 @@ All arguments passed into `go()` constructor are available as public properties:
 If a navigator is called, go.to creates a public map of all navigators to their corresponding route paths.
 
     .navigators
+    
+Handlers
+--------
+Handlers are the functions that ultimately get invoked by running the route. There are four kinds. Here they are in the order they would be run if all of them were queued for a single route:
+
+1. Before - If defined, runs any pre-route code defined in the routes JSON map.
+2. Parent - If a subroute is being executed, parent route is run before the subroute.
+3. Primary - The actual route intended to be run.
+4. After - If defined, runs any post-route code defined in the routes JSON map.
+
+Handlers are called by go.to and automatically passed two arguments:
+
+    handler(object go, object target)
+
+> `@go object` - The current instance of go.to. Useful for calling additional routes from within the handler.
+
+> `@target object` - The target DOM object (window or anchor). Default is window. Useful for determining how the route was executed -- either a click on a bound hash anchor (`<a href="#subrouteName">Do Subroute</a>`) or the loading of the page (window).
+
+NOTE: Handlers are called with the controllers JSON map set as "this", so any reference to "this" within the handler function will point to the controllers JSON map.
+    
+
+**Example:**
+```javascript
+// Routes
+{
+    
+    before: function(go, target){
+        doThisFirst();
+    },
+    
+    '/route/path.htm': 'app.someHandler'
+    
+    after: function(go, target){
+        doThisLast();
+    }
+    
+    
+}
+...
+
+// Controllers
+{
+    
+    app: {
+        
+        someHandler: function(go, target){
+            doThisThing();
+            this.app.otherHandler(go, target);
+        },
+        
+        otherHandler: function(go, target){
+            doThisToo();
+        }
+        
+    }
+    
+}
+
+```
 
 License
 -------
