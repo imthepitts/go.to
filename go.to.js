@@ -17,9 +17,11 @@
                 ignoreSlash: true
             }, 
 
+            // Placeholder for lowercasing routes
             replacer = '';
         ;
 
+        // Set option defaults into options
         for (var option in defaultOptions){
             if (typeof options[option] === 'undefined'){
                 options[option] = defaultOptions[option];
@@ -122,9 +124,9 @@
                     before: function(){
                     }, 
 
-                    // Handler to invoke
+                    // Primary handler to invoke
                     handler: function(go){
-                        // If no route found, try to find navigator link                    
+                        // If no route found, try to find navigator link
                         navigate.call(go, route, subroute === true);
                     },
 
@@ -184,6 +186,8 @@
                         // Already at this location, just invoke the handler
                         if (window.location.pathname === options.rootPath + this.navigators[to].pathname){
                             this.to(this.navigators[to]);
+
+                            // Add the hash, if it exists
                             if (this.navigators[to].hash){
                                 window.location.hash = this.navigators[to].hash;
                             }
@@ -222,14 +226,14 @@
                     // Switch for determining if route needs to be run before executing subroute
                     var runParentRouteFirst = false;
 
-                    // Check for hook handler
+                    // Check for before/after route hook handler
                     var assignHookHandler = function(handlerType){
                         if (routes[handlerType]){
                             assignHandler(routes[handlerType], handlerType);
                         }
                     };
 
-                    // Hook handler found, assign it and return it
+                    // Before/after route hook handler found, assign it and return it
                     if ({before:true, after:true}[handlerType]){
                         assignHookHandler(handlerType);
                         return handlers[handlerType];
@@ -244,12 +248,12 @@
                         // Check for subroute end point before calling top-level handler
                         } else if (subroute && routes[routePath].subroutes && routes[routePath].subroutes['#' + subroute]){
                             
-                            // Get subroute endpoint
+                            // Subroute end point IS a handler?
                             endPoint = routes[routePath].subroutes['#' + subroute];
                             if (assignHandler(endPoint, handlerType)){
                                 runParentRouteFirst = true;
 
-                            // Subroute end point has handler?
+                            // Subroute end point HAS a handler?
                             } else if (endPoint.handler){
                                 endPoint = endPoint.handler;
                                 if (assignHandler(endPoint, handlerType)){
@@ -257,6 +261,7 @@
                                 }
                             }
 
+                            // Subroute found, fetch the parent route
                             if (runParentRouteFirst){
                                 fetchHandler(routePath, null, 'parent');
                             }
@@ -271,11 +276,12 @@
                         }
                     }
 
+                    // Return the fetched handler
                     return handlers[handlerType];
                 }
             ;
 
-            // Queue pre-route handler, if it exists
+            // Queue pre-route handler, if it exists, then delete it to prevent from running again
             if (routes.before && route !== 'before'){
                 handlerQueue.push(fetchHandler(null, null, 'before'));
                 delete routes.before;
@@ -292,7 +298,7 @@
             // Queue primary handler, now that parent has been queued
             handlerQueue.push(handlers.handler);
 
-            // Queue after-route handler, if it exists
+            // Queue after-route handler, if it exists, then delete it to prevent from running again
             if (routes.after && route !== 'after'){
                 handlerQueue.push(fetchHandler(null, null, 'after'));
                 delete routes.after;
