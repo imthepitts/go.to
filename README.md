@@ -20,7 +20,7 @@ You have a moderate amount of JavaScript code, and it's getting confusing which 
 
 Dependences
 -----------
-go.to requires jQuery and Array.reduce() (use a shim to enable Array.reduce() on older browers). jQuery is only required if using automatic binding of hash anchor click events (turned on by default).
+go.to requires jQuery and Array.reduce() ([use a shim to enable Array.reduce()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/Reduce?redirectlocale=en-US&redirectslug=JavaScript%2FReference%2FGlobal_Objects%2FArray%2FReduce#Compatibility) on older browers). jQuery is only required if using automatic binding of hash anchor click events (turned on by default).
 
 Features & Behavior
 -------------------
