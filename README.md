@@ -22,11 +22,11 @@ Dependences
 -----------
 go.to requires jQuery and Array.reduce() ([use a shim to enable Array.reduce()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/Reduce?redirectlocale=en-US&redirectslug=JavaScript%2FReference%2FGlobal_Objects%2FArray%2FReduce#Compatibility) on older browers). jQuery is only required if using automatic binding of hash anchor click events (turned on by default).
 
-Features & Behavior
+Features &amp; Behavior
 -------------------
-go.to is based entirely on the assumption that it will be used to run bits of JavaScript code on a page by page basis. So if the user browses to `/index.htm`, go.to will only run the section of code that is mapped to that path (using `window.location.pathname`).
+go.to is based entirely on the assumption that it will be used to run bits of JavaScript code on a page by page basis. So if the user browses to `/index.htm`, go.to will only run the section of code that is mapped to that path (using `window.location.pathname`). This pathname is the route.
 
-If a hash location is specified in the URL (`window.location.hash`) as `/search.htm#advanced`, go.to will first run any code mapped to the route `/search.htm` and then it will run any code mapped to the subroute `#advanced`. 
+If a hash location is specified in the URL (`window.location.hash`) as `/search.htm#advanced`, go.to will first run any code mapped to the route `/search.htm` and then it will run any code mapped to the subroute `#advanced`. This hash is the subroute. 
 
 **IMPORTANT:** go.to will only run the parent route code once per page load (e.g. `/search.htm`), even if the route is explicitly called later. This helps to ensure event bindings within the route don't get bound multiple times.
 
@@ -268,6 +268,72 @@ NOTE: Handlers are called with the controllers JSON map set as "this", so any re
 }
 
 ```
+
+Handler Definitions
+-------------------
+Handlers can be defined in a number of ways:
+
+1. Function literal
+2. Reference to a function
+3. Dot notation string mapped to controller object (passed in during instantiation)
+4. JSON map of handler, navigator, and subroutes
+
+**Function literal**
+```javascript
+{
+
+    '/route.htm': function(go, target){
+        // handle the route
+    }
+
+}
+```
+
+**Reference to function**
+```javascript
+{
+
+    '/route.htm': someFunction
+
+}
+```
+
+**Dot notation string**
+```javascript
+{
+
+    '/route.htm': 'controller.someMethod'
+
+}
+```
+
+**JSON map**
+
+This is the only way to define subroutes. Subroutes cannot themselves have subroutes. Handler, navigator, and subroutes are all optional. Handlers defined within the subroutes can only be defined as a function literal, function reference or as a dot notation string.
+```javascript
+{
+
+    '/route.htm': {        
+            
+        // Handler to invoke        
+        handler: "controller.someMethod",
+        
+        // Shortcut name for this route
+        navigator: "navigatorName",
+
+        // Subroutes
+        subroutes: {
+            "#someSubroute": someOject.subrouteHandler,
+            "#subrouteName": {
+                handler: "controller.otherMethod",
+                navigator: "subrouteNavigator"
+            }
+        }
+    }
+
+}
+```
+
 
 License
 -------
