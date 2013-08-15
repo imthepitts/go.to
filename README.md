@@ -30,7 +30,7 @@ If a hash location is specified in the URL (`window.location.hash`) as `/search.
 
 **IMPORTANT:** go.to will only run the parent route code once per page load (e.g. `/search.htm`), even if the route is explicitly called later. This helps to ensure event bindings within the route don't get bound multiple times.
 
-Routes can have shortcuts, called "navigators" defined in the routes JSON map. This allows a particular route to be explicitly called by that shortcut name: `go.to('advancedSearch')` instead of `go.to('/search.htm', '#advanced)`.
+Routes can have shortcuts, called "navigators" defined in the routes JSON map. This allows a particular route to be explicitly called by that shortcut name: `go.to('advancedSearch')` instead of `go.to('/search.html', '#advanced)`.
 
 **Feature Summary:**
 
@@ -46,7 +46,7 @@ Create an instance of go.to by calling `go()`. You can have multiple instances o
 
     go(routes[, controllers, options])
 
-> `@routes map` - JSON map of route paths ('/index.htm') and subroute hashes ('#home') to their corresponding handler/controller. Function literals can be used in routes instead of mapping to the controller.
+> `@routes map` - JSON map of route paths ('/index.html') and subroute hashes ('#home') to their corresponding handler/controller. Function literals can be used in routes instead of mapping to the controller.
 
 > `@controllers map` - Optional JSON map or external object reference to which the routes are mapped. The function that corresponds to the routes mapping will be executed.
 
@@ -239,7 +239,7 @@ NOTE: Handlers are called with the controllers JSON map set as "this", so any re
         doThisFirst();
     },
     
-    '/route/path.htm': 'app.someHandler'
+    '/route/path.html': 'app.someHandler'
     
     after: function(go, target){
         doThisLast();
